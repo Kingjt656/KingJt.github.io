@@ -1,0 +1,997 @@
+
+  <!DOCTYPE html>
+  <html lang="zh-CN"  
+    
+      data-theme-mode="auto"
+    
+  >
+  <head>
+  
+  <meta charset="utf-8">
+  
+
+  
+
+  
+
+  <script>window.REIMU_CONFIG = {};window.REIMU_CONFIG.icon_font = '4552607_0khxww3tj3q9';window.REIMU_CONFIG.clipboard_tips = {"success":{"en":"Copy successfully (*^▽^*)","zh-CN":"复制成功 (*^▽^*)","zh-TW":"複製成功 (*^▽^*)","ja":"コピー成功 (*^▽^*)"},"fail":{"en":"Copy failed (ﾟ⊿ﾟ)ﾂ","zh-CN":"复制失败 (ﾟ⊿ﾟ)ﾂ","zh-TW":"複製失敗 (ﾟ⊿ﾟ)ﾂ","ja":"コピー失敗 (ﾟ⊿ﾟ)ﾂ"},"copyright":{"enable":false,"count":50,"license_type":"by-nc-sa"}};window.REIMU_CONFIG.clipboard_tips.copyright.content = '本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！';window.REIMU_CONFIG.code_block = {"expand":true};window.REIMU_CONFIG.base = 'http://example.com';</script>
+  
+  <title>
+    FreeRTOS |
+    
+    KingJt@Blog
+  </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin><link rel="preload" as="style" href="https://fonts.googleapis.com/css?family=Mulish:400,400italic,700,700italic%7CNoto%20Serif%20SC:400,400italic,700,700italic&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mulish:400,400italic,700,700italic%7CNoto%20Serif%20SC:400,400italic,700,700italic&display=swap" media="print" onload="this.media&#x3D;&#39;all&#39;">
+  
+  
+    <link rel="preload" href="//at.alicdn.com/t/c/font_4552607_0khxww3tj3q9.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  
+  
+    
+<link rel="stylesheet" href="/css/loader.css">
+
+  
+  
+    <meta name="description" content="FreeRTOS一.FreeRTOS任务与中断服务程序1.cubemx配置注意事项  可挂起的系统服务请求，这个中断用于上下文切换，在这个中断的ISR里决定哪个任务占用CPU，这一项的抢占优先级为15，最低优先级，只有在没有其他ISR的时候进行上下文的切换  Time base应该设置为最高的优先级 0 ，这样FreeRTOS就无法避免HAL库的基础时钟中断 2.优先级管理和中断​	注意：在Fre">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FreeRTOS">
+<meta property="og:url" content="http://example.com/2025/05/21/FreeRTOS/index.html">
+<meta property="og:site_name" content="KingJt@Blog">
+<meta property="og:description" content="FreeRTOS一.FreeRTOS任务与中断服务程序1.cubemx配置注意事项  可挂起的系统服务请求，这个中断用于上下文切换，在这个中断的ISR里决定哪个任务占用CPU，这一项的抢占优先级为15，最低优先级，只有在没有其他ISR的时候进行上下文的切换  Time base应该设置为最高的优先级 0 ，这样FreeRTOS就无法避免HAL库的基础时钟中断 2.优先级管理和中断​	注意：在Fre">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417157.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417275.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417225.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417408.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417481.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417565.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417271.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417183.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417016.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417339.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417063.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417152.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417985.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417963.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211421036.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417310.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417620.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417977.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417955.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221452190.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221454749.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221456653.png">
+<meta property="og:image" content="http://example.com/AppData/Roaming/Typora/typora-user-images/image-20250522153947332.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417004.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417849.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221944293.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211418537.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211418071.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221941187.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221941866.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221948965.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222015259.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222032741.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222051628.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222102870.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222112184.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232131210.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232136456.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232154858.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241404904.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241408428.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241408715.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241425106.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241457159.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241501845.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251749432.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251752060.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251802226.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251805105.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505261305748.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281111346.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281120554.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281126574.png">
+<meta property="article:published_time" content="2025-05-21T06:16:45.000Z">
+<meta property="article:modified_time" content="2025-06-02T07:24:02.065Z">
+<meta property="article:author" content="KingJt">
+<meta property="article:tag" content="FreeRTOS">
+<meta property="article:tag" content="实时操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417157.png">
+  
+  
+    <link rel="alternate" href="/atom.xml" title="KingJt@Blog" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/images/favicon.ico">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  <link rel="preload" as="style" onload="this.onload&#x3D;null;this.rel&#x3D;&#39;stylesheet&#39;" href="https://npm.webcache.cn/photoswipe@5.4.4/dist/photoswipe.css" integrity="sha384-IfxC36XL&#x2F;toUyJ939C73PcgMuRzAZuIzZxE38drsmO5p6jD7ei+Zx&#x2F;1oA&#x2F;0l8ysE" crossorigin="anonymous">
+  
+  
+  
+  
+    
+<script src="https://npm.webcache.cn/pace-js@1.2.4/pace.min.js" integrity="sha384-k6YtvFUEIuEFBdrLKJ3YAUbBki333tj1CSUisai5Cswsg9wcLNaPzsTHDswp4Az8" crossorigin="anonymous"></script>
+
+  
+  
+    
+<link rel="stylesheet" href="https://npm.webcache.cn/@reimujs/aos@0.1.0/dist/aos.css" integrity="sha384-4NN3fZ5AokFyHuoihl7A9qWaCt+HsAtOaUsXwJGRb4&#x2F;SMBtFr2vcNSHR5E8dg0Wk" crossorigin="anonymous">
+
+  
+  
+    
+<link rel="stylesheet" href="https://npm.webcache.cn/aplayer@1.10.1/dist/APlayer.min.css" integrity="sha384-tLMkTWh2pfXNWGFlUS0w1TFtRG5xZ9lPWFOooj+vDDLIL+xBGQU&#x2F;voDBY5XE2lVh" crossorigin="anonymous">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+  <body>
+    
+    
+  <div id='loader'>
+    <div class="loading-left-bg loading-bg"></div>
+    <div class="loading-right-bg loading-bg"></div>
+    <div class="spinner-box">
+      <div class="loading-taichi rotate">
+        
+          <svg width="150" height="150" viewBox="0 0 1024 1024" class="icon" version="1.1" xmlns="https://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
+            <path d="M303.5 432A80 80 0 0 1 291.5 592A80 80 0 0 1 303.5 432z" fill="var(--red-1, #ff5252)" />
+            <path d="M512 65A447 447 0 0 1 512 959L512 929A417 417 0 0 0 512 95A417 417 0 0 0 512 929L512 959A447 447 0 0 1 512 65z 
+           M512 95A417 417 0 0 1 929 512A208.5 208.5 0 0 1 720.5 720.5L720.5 592A80 80 0 0 0 720.5 432A80 80 0 0 0 720.5 592L720.5 720.5A208.5 208.5 0 0 1 512 512A208.5 208.5 0 0 0 303.5 303.5A208.5 208.5 0 0 0 95 512A417 417 0 0 1 512 95z" fill="var(--red-1, #ff5252)" />
+          </svg>
+        
+      </div>
+      
+      
+        
+      
+      <div class="loading-word">少女祈祷中...</div>
+    </div>
+  </div>
+  </div>
+  <script>
+    var time = null;
+    var startLoading = () => {
+      time = Date.now();
+      document.getElementById('loader').classList.remove("loading");
+    }
+    var endLoading = () => {
+      if (!time) {
+        document.body.style.overflow = 'auto';
+        document.getElementById('loader').classList.add("loading");
+      } else {
+        if (Date.now() - time > 500) {
+          time = null;
+          document.body.style.overflow = 'auto';
+          document.getElementById('loader').classList.add("loading");
+        } else {
+          setTimeout(endLoading, 500 - (Date.now() - time));
+          time = null;
+        }
+      }
+    }
+    window.addEventListener('DOMContentLoaded', endLoading);
+    document.getElementById('loader').addEventListener('click', endLoading);
+  </script>
+
+<div id="copy-tooltip" style="pointer-events: none; opacity: 0; transition: all 0.2s ease; position: fixed;top: 50%;left: 50%;z-index: 999;transform: translate(-50%, -50%);color: white;background: rgba(0, 0, 0, 0.5);padding: 10px 15px;border-radius: 10px;">
+</div>
+
+
+    <div id="container">
+      <div id="wrap">
+        <div id="header-nav">
+  <nav id="main-nav">
+    
+      
+        <span class="main-nav-link-wrap">
+          <div class="main-nav-icon icon rotate">
+             
+              &#xe62b;
+             
+          </div>
+          <a class="main-nav-link" href="/">首页</a>
+        </span>
+      
+        <span class="main-nav-link-wrap">
+          <div class="main-nav-icon icon rotate">
+             
+              &#xe62b;
+             
+          </div>
+          <a class="main-nav-link" href="/archives">归档</a>
+        </span>
+      
+        <span class="main-nav-link-wrap">
+          <div class="main-nav-icon icon rotate">
+             
+              &#xe62b;
+             
+          </div>
+          <a class="main-nav-link" href="/about">关于</a>
+        </span>
+      
+        <span class="main-nav-link-wrap">
+          <div class="main-nav-icon icon rotate">
+             
+              &#xe62b;
+             
+          </div>
+          <a class="main-nav-link" href="/friend">友链</a>
+        </span>
+      
+    
+    <a id="main-nav-toggle" class="nav-icon"></a>
+  </nav>
+  <nav id="sub-nav">
+    
+      <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS 订阅" target="_blank"></a>
+    
+    
+    
+      <a id="nav-search-btn" class="nav-icon popup-trigger" title="搜索"></a>
+    
+  </nav>
+  
+</div>
+<header id="header">
+  
+    <picture></picture>
+    <img  fetchpriority="high" src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202506021523138.png" alt="FreeRTOS">
+  
+  <div id="header-outer">
+    <div id="header-title">
+      
+        
+        
+          <a href="/" id="logo">
+            <h1 data-aos="slide-up">FreeRTOS</h1>
+          </a>
+        
+      
+      
+        
+        <h2 id="subtitle-wrap" data-aos="slide-down">
+          
+        </h2>
+      
+    </div>
+  </div>
+</header>
+
+        <div id="content"  class="sidebar-right" >
+          <aside id="sidebar">
+  
+  
+  
+  <div class="sidebar-wrapper wrap-sticky">
+    <div class="sidebar-wrap" data-aos="fade-up">
+      
+        
+          <div class="sidebar-toc-sidebar"><div class="sidebar-toc">
+  <h3 class="toc-title">文章目录</h3>
+  <div class="sidebar-toc-wrapper toc-div-class" >
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FreeRTOS"><span class="toc-number">1.</span> <span class="toc-text">FreeRTOS</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-FreeRTOS%E4%BB%BB%E5%8A%A1%E4%B8%8E%E4%B8%AD%E6%96%AD%E6%9C%8D%E5%8A%A1%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.1.</span> <span class="toc-text">一.FreeRTOS任务与中断服务程序</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-cubemx%E9%85%8D%E7%BD%AE%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.cubemx配置注意事项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BC%98%E5%85%88%E7%BA%A7%E7%AE%A1%E7%90%86%E5%92%8C%E4%B8%AD%E6%96%AD"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.优先级管理和中断</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%AD%E6%96%AD%E5%B1%8F%E8%94%BD%E5%92%8C%E4%B8%B4%E7%95%8C%E4%BB%A3%E7%A0%81%E6%AE%B5"><span class="toc-number">1.1.3.</span> <span class="toc-text">3.中断屏蔽和临界代码段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%9C%A8ISR%E5%87%BD%E6%95%B0%E4%B8%AD%E4%BD%BF%E7%94%A8FreeRTOS-API%E5%87%BD%E6%95%B0"><span class="toc-number">1.1.4.</span> <span class="toc-text">4.在ISR函数中使用FreeRTOS API函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E4%B8%8E%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.2.</span> <span class="toc-text">二、进程间通信与消息队列</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E4%BB%A5%E5%8F%8A%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E5%8E%9F%E7%90%86%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.进程间通信的基本概念以及消息队列的原理使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%98%9F%E5%88%97%E7%9A%84%E7%89%B9%E7%82%B9%E5%92%8C%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.队列的特点和基本操作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.</span> <span class="toc-text">三、信号量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8C%E5%80%BC%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.1.</span> <span class="toc-text">1、二值信号量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E8%AE%A1%E6%95%B0%E5%9E%8B%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.2.</span> <span class="toc-text">2、计数型信号量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BA%92%E6%96%A5%E9%87%8F"><span class="toc-number">1.4.</span> <span class="toc-text">四、互斥量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8C%E5%80%BC%E4%BF%A1%E5%8F%B7%E9%87%8F%E5%92%8C%E4%BA%92%E6%96%A5%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.4.1.</span> <span class="toc-text">1、二值信号量和互斥量的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E9%80%92%E5%BD%92%E4%BA%92%E6%96%A5%E9%87%8F"><span class="toc-number">1.4.2.</span> <span class="toc-text">2、递归互斥量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BA%8B%E4%BB%B6%E7%BB%84"><span class="toc-number">1.5.</span> <span class="toc-text">五、事件组</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8B%E4%BB%B6%E7%BB%84%E6%A6%82%E5%BF%B5"><span class="toc-number">1.5.1.</span> <span class="toc-text">1、事件组概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BA%8B%E4%BB%B6%E7%BB%84%E7%9A%84%E5%A4%9A%E4%BB%BB%E5%8A%A1%E5%90%8C%E6%AD%A5%E4%BD%BF%E7%94%A8"><span class="toc-number">1.5.2.</span> <span class="toc-text">2. 事件组的多任务同步使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5"><span class="toc-number">1.6.</span> <span class="toc-text">六、 任务通知</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="toc-number">1.6.1.</span> <span class="toc-text">1. 任务通知相关函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5%E4%BC%A0%E9%80%92%E6%95%B0%E6%8D%AE"><span class="toc-number">1.6.2.</span> <span class="toc-text">2. 任务通知传递数据</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81-%E8%BD%AF%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%99%A8"><span class="toc-number">1.7.</span> <span class="toc-text">七、 软件定时器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81-%E9%9F%A6%E4%B8%9C%E5%B1%B1%E7%AC%94%E8%AE%B0"><span class="toc-number">1.8.</span> <span class="toc-text">八、 韦东山笔记</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81-%E5%90%84%E7%B1%BB%E6%96%B9%E6%B3%95%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">1.8.1.</span> <span class="toc-text">1、 各类方法的对比</span></a></li></ol></li></ol></li></ol>
+      
+  </div>
+</div>
+</div>
+          <div class="sidebar-common-sidebar hidden"><div class="sidebar-author">
+  <img data-src="/avatar/avatar.jpg" data-sizes="auto" alt="KingJt" class="lazyload">
+  <div class="sidebar-author-name">KingJt</div>
+  <div class="sidebar-description"></div>
+</div>
+<div class="sidebar-state">
+  <div class="sidebar-state-article">
+    <div>文章</div>
+    <div class="sidebar-state-number">8</div>
+  </div>
+  <div class="sidebar-state-category">
+    <div>分类</div>
+    <div class="sidebar-state-number">0</div>
+  </div>
+  <div class="sidebar-state-tag">
+    <div>标签</div>
+    <div class="sidebar-state-number">15</div>
+  </div>
+</div>
+<div class="sidebar-social">
+  
+    <div class="icon-bilibili sidebar-social-icon">
+      <a href=https://space.bilibili.com/674323178 itemprop="url" target="_blank" aria-label="bilibili" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+    <div class="icon-github sidebar-social-icon">
+      <a href=https://github.com/Kingjt656 itemprop="url" target="_blank" aria-label="github" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+    <div class="icon-email sidebar-social-icon">
+      <a href=1562095990@qq.com itemprop="url" target="_blank" aria-label="email" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+</div>
+<div class="sidebar-menu">
+  
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/" aria-label="首页"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">首页</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/archives" aria-label="归档"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">归档</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/about" aria-label="关于"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">关于</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/friend" aria-label="友链"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">友链</div>
+      </div>
+    
+  
+</div>
+</div>
+        
+      
+      
+        
+          <div class="sidebar-btn-wrapper" style="position:static">
+            <div class="sidebar-toc-btn current"></div>
+            <div class="sidebar-common-btn"></div>
+          </div>
+        
+      
+    </div>
+  </div>
+
+  <div class="sidebar-widget">
+  
+  </div>
+  
+</aside>
+
+          <section id="main"><article id="post-FreeRTOS" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-inner" data-aos="fade-up">
+    <div class="article-meta">
+      <div class="article-date">
+  <span class="article-date-link" data-aos="zoom-in">
+    <time datetime="2025-05-21T06:16:45.000Z" itemprop="datePublished">2025-05-21</time>
+    <time style="display: none;" id="post-update-time">2025-06-02</time>
+  </span>
+</div>
+
+      
+
+    </div>
+    <div class="hr-line"></div>
+    
+
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+      
+        <h1 id="FreeRTOS"><a href="#FreeRTOS" class="headerlink" title="FreeRTOS"></a>FreeRTOS</h1><h2 id="一-FreeRTOS任务与中断服务程序"><a href="#一-FreeRTOS任务与中断服务程序" class="headerlink" title="一.FreeRTOS任务与中断服务程序"></a>一.FreeRTOS任务与中断服务程序</h2><h3 id="1-cubemx配置注意事项"><a href="#1-cubemx配置注意事项" class="headerlink" title="1.cubemx配置注意事项"></a>1.cubemx配置注意事项</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417157.png" alt="1746930754125"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417275.png" alt="1746930957686"></p>
+<p>可挂起的系统服务请求，这个中断用于上下文切换，在这个中断的ISR里决定哪个任务占用CPU，这一项的抢占优先级为15，最低优先级，只有在没有其他ISR的时候进行上下文的切换</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417225.png" alt="1746931258951"></p>
+<p>Time base应该设置为最高的优先级 0 ，这样FreeRTOS就无法避免HAL库的基础时钟中断</p>
+<h3 id="2-优先级管理和中断"><a href="#2-优先级管理和中断" class="headerlink" title="2.优先级管理和中断"></a>2.优先级管理和中断</h3><p>​	注意：在FreeRTOS中，中断优先级的数值越小，优先级越高；</p>
+<p>​		    而FreeRTOS的任务优先级是，任务优先级数值越小，任务优先级越低；</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417408.png" alt="1746931983496"></p>
+<p>优先级0 ~ 4的中断是不受FreeRTOS的管理的，称为FreeRTOS不可屏蔽中断；优先级5 ~ 15 称为FreeRTOS可屏蔽中断</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417481.png" alt="1746934996605"></p>
+<p>eg:如果采用中断方式进行ADC数据采集时， 只需要在ADC的中断里将数据读到缓冲区，而对数据进行滤波或者频谱计算等耗时的工作，应该在任务函数中运行。这就涉及到中断ISR与任务函数之间的同步问题了，这就是进程间的通信问题</p>
+<h3 id="3-中断屏蔽和临界代码段"><a href="#3-中断屏蔽和临界代码段" class="headerlink" title="3.中断屏蔽和临界代码段"></a>3.中断屏蔽和临界代码段</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417565.png" alt="1746960166187"></p>
+<p>在某些时候，任务的某段代码可能很关键，需要连续执行完，不希望被其他任务或中断打断，这种程序段称为临界段。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417271.png" alt="1747038838836"></p>
+<p>​        我们可以使用taskDISABLE_INTERRUPTS()来屏蔽MCU的部分中断，然后使用taskENABLE_INTERRUPTS()就可以解除屏蔽</p>
+<p>​        在临界代码段内，FreeRTOS会暂停任务调度，正在执行的任务是不会被更高优先级的任务抢占的，能够保证代码执行的连续性</p>
+<h3 id="4-在ISR函数中使用FreeRTOS-API函数"><a href="#4-在ISR函数中使用FreeRTOS-API函数" class="headerlink" title="4.在ISR函数中使用FreeRTOS API函数"></a>4.在ISR函数中使用FreeRTOS API函数</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417183.png" alt="1747039685433"></p>
+<p>注意：在ISR中绝对不能使用任务级API函数，但是在任务函数中使用中断级API函数。而且，在FreeRTOS不能管理的高优先级中断的ISR里，连中断几API函数也不能使用</p>
+<p>进入和退出临界区之间不仅会屏蔽中断，也会关闭任务调度，使得中间的代码无法被其他的任务打断</p>
+<p>注意：我们不能在禁用中断的这个代码段 或者是临界区代码段，调用触发任务调度的函数如：vTaskDelay（）或者是申请信号量进行进程间同步的函数，因为发生任务调度时就会打开中断，从而就会失去定义中断、屏蔽代码段或临界代码段的意义</p>
+<h2 id="二、进程间通信与消息队列"><a href="#二、进程间通信与消息队列" class="headerlink" title="二、进程间通信与消息队列"></a>二、进程间通信与消息队列</h2><h3 id="1-进程间通信的基本概念以及消息队列的原理使用"><a href="#1-进程间通信的基本概念以及消息队列的原理使用" class="headerlink" title="1.进程间通信的基本概念以及消息队列的原理使用"></a>1.进程间通信的基本概念以及消息队列的原理使用</h3><p>①消息队列是信号量 和 互斥量的基础</p>
+<p>②任务 和 ISR可以统称为进程</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417016.png" alt="1747210322563"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417339.png" alt="1747210416864"></p>
+<p> <img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417063.png" alt="1747210616550"></p>
+<p>二值信号量是没有优先级的继承机制，可能会出现优先级翻转问题</p>
+<p>互斥量：互斥量 和 递归互斥量</p>
+<p>互斥量可以用于互斥性共享资源的访问，互斥量具有优先级的继承机制，可以减轻优先级翻转问题</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417152.png" alt="1747216525889"></p>
+<h3 id="2-队列的特点和基本操作"><a href="#2-队列的特点和基本操作" class="headerlink" title="2.队列的特点和基本操作"></a>2.队列的特点和基本操作</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417985.png" alt="1747218372214"></p>
+<p>队列的存储单元可以设置任意大小，可以存储任意数据类型，例如存储一个复杂结构体的数据，队列存储数据采用数据复制的方式，如果数据量比较大，复制数据会占用较大的存储空间，所以如果传递的是比较大的数据：比如比较长的字符串或大的结构体，可以在队列的存储单元里存储需要传递数据的指针</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417963.png" alt="1747220340932"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211421036.png" alt="image-20250521142152925">队列满时，才可以使用这个xQueueOverwrite，但是这个函数只能用于队列长度为1的队列，在队已满时，它会覆盖队列原来的数据</p>
+<p>其中xQueueReceive可以读取数据并删除已经读取的数据</p>
+<p>而xQueuePeek也可以读取数据，但是不能删除数据  </p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417310.png" alt="1747364953722"></p>
+<p>第一个vTaskDelay,让它每300ms只允许传入一个键值，也起到一个消抖的作用</p>
+<p>我们还需要考虑没有扫描到按键的情况，我们需要给它一个5ms的延时，让它处于阻塞状态，然后让其他的任务得以调度</p>
+<p>注意：在每个任务函数中，无论任务如果运行，都必须有一个延时，让其他的任务进行调度 </p>
+<h2 id="三、信号量"><a href="#三、信号量" class="headerlink" title="三、信号量"></a>三、信号量</h2><p>​		有的时候进程间需要传递的只是一个标志，用于进程间同步 或 对一个共享资源的互斥性访问，这个时候就可以使用信号量和互斥量；信号量和互斥量的实现都是基于队列的。</p>
+<p>​		信号量更适合用于进程间同步，而互斥量更适合用于共享资源的互斥性访问</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417620.png" alt="1747552095441"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417977.png" alt="1747552153542"></p>
+<h3 id="1、二值信号量"><a href="#1、二值信号量" class="headerlink" title="1、二值信号量"></a>1、二值信号量</h3><p>​	二值信号量就是只有一个项的队列。二值信号量就像一个标志，要么是空、要么是满，适合用于进程间同步的通信。所以说相当于只有0 和 1两种值</p>
+<h3 id="2、计数型信号量"><a href="#2、计数型信号量" class="headerlink" title="2、计数型信号量"></a>2、计数型信号量</h3><p>​	计数型信号量就是有固定长度的队列，每个项是一个标志。计数型信号量常用于多个共享资源的访问控制</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417955.png" alt="1747565788527"></p>
+<p>​	如果计数信号量的值为0，那么（以上4张桌子）的资源都被占用了，再有（客人）想进店，就需要等待；在任务中申请信号量时，可以设置超时等待时间，在等待时，任务就进入阻塞状态；当一个（客人）用餐结束就可以释放，也就是Give信号量，计数信号量的值加1，表示可用资源的数量增加了一个，这个适合就可以供其他的任务或者ISR来进行使用</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221452190.png" alt="image-20250522145256923"></p>
+<p>​	注意：对于FromISR的函数，大部分都有一个参数，用来试图解决优先级翻转问题</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221454749.png" alt="image-20250522145450506"></p>
+<p>使用portYIELD_FROM_ISR函数，在可能的情况下进行一次任务调度</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221456653.png" alt="image-20250522145645413"></p>
+<p>只有在信号量不为空的时候，才需要释放信号量</p>
+<h2 id="四、互斥量"><a href="#四、互斥量" class="headerlink" title="四、互斥量"></a>四、互斥量</h2><p><img src="/./../../../../AppData/Roaming/Typora/typora-user-images/image-20250522153947332.png" alt="image-20250522153947332"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417004.png" alt="1747567070728"></p>
+<p>​	互斥量是对信号量的优化；信号量存在优先级翻转的问题，使得系统的实时性变差。互斥量引入了优先级集成机制，可以减缓优先级翻转问题,但是不能完全消除；</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211417849.png" alt="1747570441679"></p>
+<h3 id="1、二值信号量和互斥量的区别"><a href="#1、二值信号量和互斥量的区别" class="headerlink" title="1、二值信号量和互斥量的区别"></a>1、二值信号量和互斥量的区别</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221944293.png" alt="1747570673697"></p>
+<p>​	注意：互斥量不可以在ISR中使用，因为互斥量是具有任务的优先级的继承机制，而ISR不是任务。另外，ISR函数中不能设置阻塞等待时间，而获取互斥量时经常是需要等待的。</p>
+<h3 id="2、递归互斥量"><a href="#2、递归互斥量" class="headerlink" title="2、递归互斥量"></a>2、递归互斥量</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211418537.png" alt="1747571101136"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505211418071.png" alt="1747572966977"></p>
+<pre><code>	注意：xSemaphoreGive(xSemaphore) 这个函数不仅可以释放二值信号量，也可以释放计数信号量 和 互斥量，所以说xSemaphore可以是这三种对象的句柄
+</code></pre>
+<p>​	同样的，xSemaphoreTake（xSwemaphore,xBlockTime）不仅可以用于获取二值信号量，还可以用于获取计数信号量 和 互斥量</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221941187.png" alt="image-20250522165304687"></p>
+<p>获取信号量也有一个返回值，如果获取成功，则获取信号量函数的值为pdTRUE</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221941866.png" alt="image-20250522190204337"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505221948965.png" alt="image-20250522194807750"></p>
+<p>​	Task_Middle is running打印两次，其中它是每500ms发送一次，我们可以看到低优先级获取信号量和释放信号量之间Task_Middle发送了两次消息，那在Task_Low释放了二值信号量之后，Task_High就立马抢占了运行，发送了一条Task_High Get token ，这个例子可以看到明显的优先级翻转现象</p>
+<p>​	优先级翻转现象导致了高优先级的任务不能计时运行，违背了抢占式任务调度的设计初衷，对系统的实时性是不利的。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222015259.png" alt="image-20250522201544169"></p>
+<p>​	由于使用互  斥量，所以说高优先级任务在试图获取互斥量时，如果互斥量被Task_Low占用着，拿FreeRTOS会将它Task_Low的优先级临时提高到Task_High的优先级，这样在Task_Low占用互斥量的运行期间,Task_Middle就无法抢占CPU运行。</p>
+<p>​	只有在Task_Low释放互斥量之后，Task_High才能抢占CPU立即运行</p>
+<p>​	因此，使用互斥量就避免了高优先级任务被中等优先级任务插队运行的情况。</p>
+<h2 id="五、事件组"><a href="#五、事件组" class="headerlink" title="五、事件组"></a>五、事件组</h2><h3 id="1、事件组概念"><a href="#1、事件组概念" class="headerlink" title="1、事件组概念"></a>1、事件组概念</h3><p>​	事件组使用与多个事件触发一个或多个任务的运行，可以实现事件的广播，还可以实现多个任务的同步运行</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222032741.png" alt="image-20250522203146760"></p>
+<p>​	如果要处理多个事件，一般情况下，需要分解为多个任务，设置多个信号量；其次，可能有多个任务等待同一个事件的发生，但是在事件发生时，只能解除最高优先级的任务的阻塞状态，而不能同时解除多个任务的组设状态，也就是说 <strong>队列</strong> 或 <strong>信号量</strong> 具有排他性，不能解决某些特定的问题</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222051628.png" alt="image-20250522205153402"></p>
+<p>​	事件组允许任务等待一个或多个事件的组合，事件组会解除所有等待同一事件的任务的阻塞状态</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222102870.png" alt="image-20250522210219714"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505222112184.png" alt="image-20250522211223957"></p>
+<p>​	①事件标志只能是0 或 1，用单独的一个位来存储。</p>
+<p>​	②如果一个事件位被设置为1，则表示这个事件发生了。反之，为0表示事件未发生</p>
+<p>​	③32位的事件组最多可以处理24个事件。</p>
+<p>​	④事件组具有广播功能，可以使多个任务同时解除阻塞后运行</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232131210.png" alt="image-20250523213107048"></p>
+<h3 id="2-事件组的多任务同步使用"><a href="#2-事件组的多任务同步使用" class="headerlink" title="2. 事件组的多任务同步使用"></a>2. 事件组的多任务同步使用</h3><pre><code>	通过事件组进行多任务同步，在事件组的条件成立时，多个任务的阻塞状态可以同时解除，利用事件组的这个特性，可以实现多任务的同步。
+</code></pre>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232136456.png" alt="image-20250523213608254"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505232154858.png" alt="image-20250523215423638"></p>
+<p>​	多个任务在某个同步点同步运行</p>
+<p>​	函数xEventGroupSync可以替代这两个函数实现一步操作，用于实现多任务之间的同步。</p>
+<h2 id="六、-任务通知"><a href="#六、-任务通知" class="headerlink" title="六、 任务通知"></a>六、 任务通知</h2><p>​	使用任务通知，不需要创建任何的中间对象，可以直接从任务向任务，或者从ISR向任务发送通知，任务通知可以模拟二值信号量，计数信号量或者长度为1的消息队列。使用任务通知通常效率更高，消耗内存更少。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241404904.png" alt="image-20250524140353049"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241408428.png" alt="image-20250524140813177"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241408715.png" alt="image-20250524140835507"></p>
+<p>​	注意：发送者可以是任务和ISR，接收者只能是任务，不能是ISR</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241425106.png" alt="image-20250524142519872"></p>
+<p>​	注意：任务通知的局限性：不能向ISR发送通知，只能是任务或ISR函数向任务发送通知</p>
+<h3 id="1-任务通知相关函数"><a href="#1-任务通知相关函数" class="headerlink" title="1. 任务通知相关函数"></a>1. 任务通知相关函数</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241457159.png" alt="image-20250524145718905"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505241501845.png" alt="image-20250524150111607"></p>
+<h3 id="2-任务通知传递数据"><a href="#2-任务通知传递数据" class="headerlink" title="2. 任务通知传递数据"></a>2. 任务通知传递数据</h3><p>​	使用任务通知来传递数据，使用中断方式进行ADC，然后通过任务通知，将ADC转换结果作为通知值发送给另一个任务加以显示</p>
+<h2 id="七、-软件定时器"><a href="#七、-软件定时器" class="headerlink" title="七、 软件定时器"></a>七、 软件定时器</h2><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251749432.png" alt="image-20250525174932172"></p>
+<p>​	定时器被创建后，有休眠 和 运行 两种状态；并且，处于休眠状态的定时器不会执行其回调函数；</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251752060.png" alt="image-20250525175245866"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251802226.png" alt="image-20250525180256017"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505251805105.png" alt="image-20250525180557935"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505261305748.png" alt="image-20250526130513490"></p>
+<h2 id="八、-韦东山笔记"><a href="#八、-韦东山笔记" class="headerlink" title="八、 韦东山笔记"></a>八、 韦东山笔记</h2><h3 id="1、-各类方法的对比"><a href="#1、-各类方法的对比" class="headerlink" title="1、 各类方法的对比"></a>1、 各类方法的对比</h3><p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281111346.png" alt="image-20250528111144244"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281120554.png" alt="image-20250528112020186"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202505281126574.png" alt="image-20250528112610479"></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+      
+      
+        <div class="share-wrapper">
+  
+    <a href="https://service.weibo.com/share/share.php?url=http%3A%2F%2Fexample.com%2F2025%2F05%2F21%2FFreeRTOS%2F&amp;appkey=&amp;title=FreeRTOS&amp;pic=&amp;ralateUid=" target="_blank" rel="noopener noreferrer" title="FreeRTOS">
+      <div class="share-icon icon icon-weibo">
+        
+      </div>
+    </a>
+  
+    <a href="https://connect.qq.com/widget/shareqq/index.html?url=www.baidu.com&amp;title=FreeRTOS&amp;desc=FreeRTOS&amp;source=http%3A%2F%2Fexample.com" target="_blank" rel="noopener noreferrer" title="FreeRTOS">
+      <div class="share-icon icon icon-qq">
+        
+      </div>
+    </a>
+  
+</div>
+      
+      
+      
+      
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item" data-aos="zoom-in"><a class="article-tag-list-link" href="/tags/FreeRTOS/" rel="tag">FreeRTOS</a></li><li class="article-tag-list-item" data-aos="zoom-in"><a class="article-tag-list-link" href="/tags/%E5%AE%9E%E6%97%B6%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">实时操作系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+  <nav id="article-nav" data-aos="fade-up">
+    
+      
+      <div class="article-nav-link-wrap article-nav-link-left">
+        
+          <img data-src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202506021525725.png" data-sizes="auto" alt="Git" class="lazyload">
+        
+        <a href="/2025/05/21/Git/"></a>
+        <div class="article-nav-caption">前一篇</div>
+        <h3 class="article-nav-title">
+          
+            Git
+          
+        </h3>
+      </div>
+    
+    
+    
+    <div class="article-nav-link-wrap article-nav-link-right">
+      
+        <img data-src="https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202506021526114.png" data-sizes="auto" alt="音响硬件实习" class="lazyload">
+      
+      <a href="/2025/05/21/Music/"></a>
+      <div class="article-nav-caption">后一篇</div>
+      <h3 class="article-nav-title">
+        
+          音响硬件实习
+        
+      </h3>
+    </div>
+    
+  </nav>
+
+
+</article>
+
+
+
+
+
+
+
+
+
+
+</section>
+        </div>
+        <footer id="footer">
+  <div style="width: 100%; overflow: hidden">
+    <div class="footer-line"></div>
+  </div>
+  <div id="footer-info">
+    
+    <div>
+      <span class="icon-copyright"></span>
+      
+      
+      
+        2020-2025
+      
+      <span class="footer-info-sep rotate"></span>
+      KingJt
+    </div>
+    
+      <div>
+        基于&nbsp;<a href="https://hexo.io/" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a>&nbsp;
+        Theme.<a href="https://github.com/D-Sketon/hexo-theme-reimu" rel="noopener external nofollow noreferrer" target="_blank">Reimu</a>
+      </div>
+    
+    
+      <div>
+        <span class="icon-brush"></span>
+        5.7k
+        &nbsp;|&nbsp;
+        <span class="icon-coffee"></span>
+        00:21
+      </div>
+    
+    
+    
+    
+      <div>
+        <span class="icon-eye"></span>
+        <span id="busuanzi_container_site_pv">总访问量&nbsp;<span id="busuanzi_value_site_pv"></span></span>
+        &nbsp;|&nbsp;
+        <span class="icon-user"></span>
+        <span id="busuanzi_container_site_uv">总访客量&nbsp;<span id="busuanzi_value_site_uv"></span></span>
+      </div>
+    
+  </div>
+</footer>
+
+        
+          <div class="sidebar-top">
+            <div class="sidebar-top-taichi rotate"></div>
+            <div class="arrow-up"></div>
+          </div>
+        
+        <div id="mask" class="hide"></div>
+      </div>
+      <nav id="mobile-nav">
+  <div class="sidebar-wrap">
+    
+      
+        <div class="sidebar-toc-sidebar"><div class="sidebar-toc">
+  <h3 class="toc-title">文章目录</h3>
+  <div class="sidebar-toc-wrapper toc-div-class" >
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FreeRTOS"><span class="toc-number">1.</span> <span class="toc-text">FreeRTOS</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-FreeRTOS%E4%BB%BB%E5%8A%A1%E4%B8%8E%E4%B8%AD%E6%96%AD%E6%9C%8D%E5%8A%A1%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.1.</span> <span class="toc-text">一.FreeRTOS任务与中断服务程序</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-cubemx%E9%85%8D%E7%BD%AE%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.cubemx配置注意事项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BC%98%E5%85%88%E7%BA%A7%E7%AE%A1%E7%90%86%E5%92%8C%E4%B8%AD%E6%96%AD"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.优先级管理和中断</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%AD%E6%96%AD%E5%B1%8F%E8%94%BD%E5%92%8C%E4%B8%B4%E7%95%8C%E4%BB%A3%E7%A0%81%E6%AE%B5"><span class="toc-number">1.1.3.</span> <span class="toc-text">3.中断屏蔽和临界代码段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%9C%A8ISR%E5%87%BD%E6%95%B0%E4%B8%AD%E4%BD%BF%E7%94%A8FreeRTOS-API%E5%87%BD%E6%95%B0"><span class="toc-number">1.1.4.</span> <span class="toc-text">4.在ISR函数中使用FreeRTOS API函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E4%B8%8E%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.2.</span> <span class="toc-text">二、进程间通信与消息队列</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E4%BB%A5%E5%8F%8A%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E5%8E%9F%E7%90%86%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.进程间通信的基本概念以及消息队列的原理使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%98%9F%E5%88%97%E7%9A%84%E7%89%B9%E7%82%B9%E5%92%8C%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.队列的特点和基本操作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.</span> <span class="toc-text">三、信号量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8C%E5%80%BC%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.1.</span> <span class="toc-text">1、二值信号量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E8%AE%A1%E6%95%B0%E5%9E%8B%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="toc-number">1.3.2.</span> <span class="toc-text">2、计数型信号量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BA%92%E6%96%A5%E9%87%8F"><span class="toc-number">1.4.</span> <span class="toc-text">四、互斥量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8C%E5%80%BC%E4%BF%A1%E5%8F%B7%E9%87%8F%E5%92%8C%E4%BA%92%E6%96%A5%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.4.1.</span> <span class="toc-text">1、二值信号量和互斥量的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E9%80%92%E5%BD%92%E4%BA%92%E6%96%A5%E9%87%8F"><span class="toc-number">1.4.2.</span> <span class="toc-text">2、递归互斥量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BA%8B%E4%BB%B6%E7%BB%84"><span class="toc-number">1.5.</span> <span class="toc-text">五、事件组</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E4%BA%8B%E4%BB%B6%E7%BB%84%E6%A6%82%E5%BF%B5"><span class="toc-number">1.5.1.</span> <span class="toc-text">1、事件组概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BA%8B%E4%BB%B6%E7%BB%84%E7%9A%84%E5%A4%9A%E4%BB%BB%E5%8A%A1%E5%90%8C%E6%AD%A5%E4%BD%BF%E7%94%A8"><span class="toc-number">1.5.2.</span> <span class="toc-text">2. 事件组的多任务同步使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5"><span class="toc-number">1.6.</span> <span class="toc-text">六、 任务通知</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="toc-number">1.6.1.</span> <span class="toc-text">1. 任务通知相关函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BB%BB%E5%8A%A1%E9%80%9A%E7%9F%A5%E4%BC%A0%E9%80%92%E6%95%B0%E6%8D%AE"><span class="toc-number">1.6.2.</span> <span class="toc-text">2. 任务通知传递数据</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81-%E8%BD%AF%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%99%A8"><span class="toc-number">1.7.</span> <span class="toc-text">七、 软件定时器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81-%E9%9F%A6%E4%B8%9C%E5%B1%B1%E7%AC%94%E8%AE%B0"><span class="toc-number">1.8.</span> <span class="toc-text">八、 韦东山笔记</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81-%E5%90%84%E7%B1%BB%E6%96%B9%E6%B3%95%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">1.8.1.</span> <span class="toc-text">1、 各类方法的对比</span></a></li></ol></li></ol></li></ol>
+      
+  </div>
+</div>
+</div>
+        <div class="sidebar-common-sidebar hidden"><div class="sidebar-author">
+  <img data-src="/avatar/avatar.jpg" data-sizes="auto" alt="KingJt" class="lazyload">
+  <div class="sidebar-author-name">KingJt</div>
+  <div class="sidebar-description"></div>
+</div>
+<div class="sidebar-state">
+  <div class="sidebar-state-article">
+    <div>文章</div>
+    <div class="sidebar-state-number">8</div>
+  </div>
+  <div class="sidebar-state-category">
+    <div>分类</div>
+    <div class="sidebar-state-number">0</div>
+  </div>
+  <div class="sidebar-state-tag">
+    <div>标签</div>
+    <div class="sidebar-state-number">15</div>
+  </div>
+</div>
+<div class="sidebar-social">
+  
+    <div class="icon-bilibili sidebar-social-icon">
+      <a href=https://space.bilibili.com/674323178 itemprop="url" target="_blank" aria-label="bilibili" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+    <div class="icon-github sidebar-social-icon">
+      <a href=https://github.com/Kingjt656 itemprop="url" target="_blank" aria-label="github" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+    <div class="icon-email sidebar-social-icon">
+      <a href=1562095990@qq.com itemprop="url" target="_blank" aria-label="email" rel="noopener external nofollow noreferrer"></a>
+    </div>
+  
+</div>
+<div class="sidebar-menu">
+  
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/" aria-label="首页"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">首页</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/archives" aria-label="归档"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">归档</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/about" aria-label="关于"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">关于</div>
+      </div>
+    
+      <div class="sidebar-menu-link-wrap">
+        <a class="sidebar-menu-link-dummy" href="/friend" aria-label="友链"></a>
+        <div class="sidebar-menu-icon icon rotate">
+          
+            &#xe62b;
+          
+        </div>
+        <div class="sidebar-menu-link">友链</div>
+      </div>
+    
+  
+</div>
+</div>
+      
+    
+  </div>
+  
+    
+      <div class="sidebar-btn-wrapper">
+        <div class="sidebar-toc-btn current"></div>
+        <div class="sidebar-common-btn"></div>
+      </div>
+    
+  
+</nav>
+
+    </div>
+    
+      <div class="site-search">
+        <div class="reimu-popup popup">
+          <div class="reimu-search">
+            <div class="reimu-search-input-icon"></div>
+            <div class="reimu-search-input" id="reimu-search-input"></div>
+            <div class="popup-btn-close"></div>
+          </div>
+          <div class="reimu-results">
+            <div id="reimu-stats"></div>
+            <div id="reimu-hits"></div>
+            <div id="reimu-pagination" class="reimu-pagination"></div>
+          </div>
+          <img class="reimu-bg" src="/images/reimu.png"/>
+        </div>
+      </div>
+    
+    
+    
+      <meting-js
+        theme="var(--color-link)"
+        id="UI复古简约"
+        server="netease"
+        type="playlist"
+        
+        fixed="true"
+        autoplay="false"
+        loop="all"
+        order="list"
+        preload="auto"
+        volume="0.7"
+        mutex="true"
+        list-folded="false"
+        lrc-type="0"
+      ></meting-js>
+    
+    
+<script src="https://npm.webcache.cn/lazysizes@5.3.2/lazysizes.min.js" integrity="sha384-3gT&#x2F;vsepWkfz&#x2F;ff7PpWNUeMzeWoH3cDhm&#x2F;A8jM7ouoAK0&#x2F;fP&#x2F;9bcHHR5kHq2nf+e" crossorigin="anonymous"></script>
+
+
+<script src="https://npm.webcache.cn/clipboard@2.0.11/dist/clipboard.min.js" integrity="sha384-J08i8An&#x2F;QeARD9ExYpvphB8BsyOj3Gh2TSh1aLINKO3L0cMSH2dN3E22zFoXEi0Q" crossorigin="anonymous"></script>
+
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+  
+<script src="/js/aos.js"></script>
+
+  <script>
+    var aosInit = () => {
+      AOS.init({
+        duration: 1000,
+        easing: "ease",
+        once: true,
+        offset: 50,
+      });
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', aosInit);
+    } else {
+      aosInit();
+    }
+  </script>
+
+
+
+<script src="/js/pjax_script.js" data-pjax></script>
+
+
+
+  
+<script src="/js/generator_search.js" defer></script>
+
+
+
+
+
+
+  
+<script src="https://npm.webcache.cn/mouse-firework@0.1.1/dist/index.umd.js" integrity="sha384-8LyaidD9GPxQQgLJO&#x2F;WRw&#x2F;O2h3BoNq&#x2F;ApI&#x2F;ecpvM6RsrCz2qP2ppBXUKihP4V&#x2F;2d" crossorigin="anonymous"></script>
+
+  <script>
+    window.firework && window.firework(JSON.parse('{"excludeElements":["a","button"],"particles":[{"shape":"circle","move":["emit"],"easing":"easeOutExpo","colors":["var(--red-1)","var(--red-2)","var(--red-3)","var(--red-4)"],"number":20,"duration":[1200,1800],"shapeOptions":{"radius":[16,32],"alpha":[0.3,0.5]}},{"shape":"circle","move":["diffuse"],"easing":"easeOutExpo","colors":["var(--red-0)"],"number":1,"duration":[1200,1800],"shapeOptions":{"radius":20,"alpha":[0.2,0.5],"lineWidth":6}}]}'))
+  </script>
+
+
+
+
+
+
+
+
+
+
+<div id="lazy-script">
+  <div>
+    
+      
+      
+      <script data-pjax>
+        window.REIMU_POST = {
+          author: "KingJt",
+          title: "FreeRTOS",
+          url: "http://example.com/2025/05/21/FreeRTOS/",
+          excerpt: "",
+          description: "",
+          stripContent: "FreeRTOS一.FreeRTOS任务与中断服务程序1.cubemx配置注意事项  可挂起的系统服务请求，这个中断用于上下文切换，在这个中断的ISR里决定哪个任务占用CPU，这一项的抢占优先级为15，最低优先级，只有在没有其他ISR的时候进行上下文的切换  Time base应该设置为最高的优先级 0 ，这样FreeRTOS就无法避免HAL库的基础时钟中断 2.优先级管理和中断​ 注意：在FreeRTOS中，中断优先级的数值越小，优先级越高； ​      而FreeRTOS的任务优先级是，任",
+          date: "Wed May 21 2025 14:16:45 GMT+0800",
+          updated: "Mon Jun 02 2025 15:24:02 GMT+0800",
+          cover: "https://cdn.jsdelivr.net/gh/Kingjt656/tuchuang@main/img/202506021523138.png",
+        };
+      </script>
+       
+    
+    
+      
+        
+<script src="/js/insert_highlight.js" data-pjax></script>
+
+        
+      
+    
+    
+      <script type="module" data-pjax>
+        const PhotoSwipeLightbox = (await safeImport("https://npm.webcache.cn/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js", "sha384-DiL6M/gG+wmTxmCRZyD1zee6lIhawn5TGvED0FOh7fXcN9B0aZ9dexSF/N6lrZi/")).default;
+        
+        const pswp = () => {
+          if (_$$('.article-entry a.article-gallery-item').length > 0) {
+            new PhotoSwipeLightbox({
+              gallery: '.article-entry',
+              children: 'a.article-gallery-item',
+              pswpModule: () => safeImport("https://npm.webcache.cn/photoswipe@5.4.4/dist/photoswipe.esm.min.js", "sha384-WkkO3GCmgkC3VQWpaV8DqhKJqpzpF9JoByxDmnV8+oTJ7m3DfYEWX1fu1scuS4+s")
+            }).init();
+          }
+          if(_$$('.article-gallery a.article-gallery-item').length > 0) {
+            new PhotoSwipeLightbox({
+              gallery: '.article-gallery',
+              children: 'a.article-gallery-item',
+              pswpModule: () => safeImport("https://npm.webcache.cn/photoswipe@5.4.4/dist/photoswipe.esm.min.js", "sha384-WkkO3GCmgkC3VQWpaV8DqhKJqpzpF9JoByxDmnV8+oTJ7m3DfYEWX1fu1scuS4+s")
+            }).init();
+          }
+          window.lightboxStatus = 'done';
+          window.removeEventListener('lightbox:ready', pswp);
+        }
+        if(window.lightboxStatus === 'ready') {
+          pswp()
+        } else {
+          window.addEventListener('lightbox:ready', pswp);
+        }
+      </script>
+      
+        
+
+
+
+
+
+
+
+
+      
+    
+  </div>
+</div>
+
+
+  <script>
+    console.log(String.raw`%c 
+ ______     ______     __     __    __     __  __    
+/\  == \   /\  ___\   /\ \   /\ "-./  \   /\ \/\ \   
+\ \  __<   \ \  __\   \ \ \  \ \ \-./\ \  \ \ \_\ \  
+ \ \_\ \_\  \ \_____\  \ \_\  \ \_\ \ \_\  \ \_____\ 
+  \/_/ /_/   \/_____/   \/_/   \/_/  \/_/   \/_____/ 
+                                                  
+`,'color: #ff5252;')
+    console.log('%c Theme.Reimu v' + '1.8.4' + ' %c https://github.com/D-Sketon/hexo-theme-reimu ', 'color: white; background: #ff5252; padding:5px 0;', 'padding:4px;border:1px solid #ff5252;')
+  </script>
+  
+
+
+
+  
+<script src="https://npm.webcache.cn/busuanzi@2.3.0/bsz.pure.mini.js" integrity="sha384-0M75wtSkhjIInv4coYlaJU83+OypaRCIq2SukQVQX04eGTCBXJDuWAbJet56id+S" crossorigin="anonymous" async></script>
+
+
+
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+</script>
+
+
+
+
+
+  
+<script src="https://npm.webcache.cn/aplayer@1.10.1/dist/APlayer.min.js" integrity="sha384-gdGYZwHnfJM54evoZhpO0s6ZF5BQiybkiyW7VXr+h5UfruuRL&#x2F;aORyw+5+HZoU6e" crossorigin="anonymous"></script>
+
+  
+
+
+
+  
+  <script>
+    var isMobile = window.matchMedia('(max-width: 959px)').matches;
+    if (isMobile) {
+      const meting = _$('meting-js');
+      if (meting) {
+        meting.setAttribute('fixed', 'true');
+        const aside = meting.parentNode;
+        if (aside?.tagName === 'ASIDE') {
+          aside.removeChild(meting);
+          document.body.appendChild(meting);
+        }
+      }
+    }
+  </script>
+  
+<script src="https://npm.webcache.cn/meting@2.0.1/dist/Meting.min.js" integrity="sha384-ASVlpKF80A22OXTK3tfEjZm1EL6uFMKIC4p8+0maanw1S&#x2F;IyB+Y4JG+ZDU7GpKE8" crossorigin="anonymous"></script>
+
+
+
+
+    
+  </body>
+  </html>
+
